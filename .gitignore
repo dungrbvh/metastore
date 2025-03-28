@@ -1,0 +1,9 @@
+# idea
+.idea
+*.iml
+*.pyc
+
+# building
+target/
+project
+.DS_Store
