@@ -57,6 +57,49 @@ object FileUtils {
    * @param isDeletePath this path will be deleted if set to `true`
    */
   def hdfsPreparePaths(hadoopConfiguration: Configuration, path: String, isDeletePath: Boolean): Unit = {
+    val fs = FileSystem.get(hadoopConfiguration)
+    val file = new Path(path)
 
+    if (!fs.exists(file.getParent)) {
+      fs.mkdirs(file)
+    }
+
+    if (isDeletePath && fs.exists(file)) {
+      fs.delete(file, true)
+      LOG.info("Deletetion of the file from the path has been performed" + path)
+    }
+
+    /**
+     * Creates a blob in Google cloud storage and uploads content.
+     * Overwrites if blob exists
+     *
+     * @param bucketId unique bucket ID
+     * @param objectName format "data/moksha/file.txt"
+     * @param storage Storage object
+     * @param lines content of the future blob
+     */
+    def createObjectGs(bucketId: String, objectName: String, storage: Storage, lines: Iterable[String]): Unit = {
+      val blobId = BlobId.of(bucketId, objectName)
+      val content = lines.mkString("\n").getBytes
+      val blobInfo = BlobInfo.newBuilder(blobId).setContentType("text/plain").build
+      storage.create(blobInfo, content)
+    }
+
+    /**
+     * Deletes a blob from Google cloud storage.
+     *
+     * @param bucketId
+     * @param objectName
+     * @param storage
+     */
+    def deleteObjectGs(bucketId: String, objectName: String, storage: Storage): Unit = {
+      val blob = storage.get(bucketId, objectName)
+      if (blob == null) {
+        System.out.println("The object " + objectName + " wasn't found in " + bucketId)
+        return
+      }
+      storage.delete(bucketId, objectName)
+      System.out.println("Object " + objectName + " was deleted from " + bucketId)
+    }
   }
 }
